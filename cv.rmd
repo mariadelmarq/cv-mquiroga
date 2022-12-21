@@ -1,0 +1,116 @@
+---
+title: "Maria del Mar Quiroga's CV"
+author: Maria del Mar Quiroga
+date: "`r Sys.Date()`"
+output:
+  pagedown::html_resume:
+    css: ['dd_cv.css', 'resume']
+    self_contained: true
+---
+
+```{css, echo=FALSE}
+.pagedjs_page:not(:first-of-type) {
+  --sidebar-width: 0rem;
+  --sidebar-background-color: #ffffff;
+  --main-width: calc(var(--content-width) - var(--sidebar-width));
+  --decorator-horizontal-margin: 0.2in;
+}
+```
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  results='asis', 
+  echo = FALSE
+)
+
+library(magrittr) # For the pipe
+source("R/cv_printing_functions.r")
+
+# Read in all data and initialize a CV printer object
+CV <- create_CV_object(data_location = "data/")
+
+#CV$entries_data$description_bullets
+```
+
+```{r}
+# When in pdf export mode the little dots are unaligned, so fix that with some conditional CSS.
+cat("
+<style>
+:root{
+  --decorator-outer-offset-left: -6.5px;
+}
+</style>")
+```
+
+# Aside
+
+```{r}
+# Build interactive network of positions colored by section
+# and connected if they occurred in the same year
+#datadrivencv::build_network_logo(CV$network)
+```
+
+## Contact {#contact}
+
+```{r}
+CV %>% print_contact_info()
+```
+
+## Key skills {#skills}
+
+```{r}
+CV %>% print_skill_list(skill_type = "key_skill")
+```
+
+
+## Technical skills
+```{r}
+CV %>% print_skill_bars(skill_type = "technical", bar_color="#660033")
+```
+
+## Disclaimer {#disclaimer}
+
+Made with the R package [**pagedown**](https://github.com/rstudio/pagedown)
+
+Last updated on `r Sys.Date()`
+
+# Main
+
+## Maria del Mar Quiroga {#title}
+
+```{r}
+# Note the special double pipe so we modify the CV object in place
+CV %<>% print_text_block("intro") 
+```
+
+## Education {data-icon="graduation-cap" data-concise="true"}
+
+```{r}
+CV %<>% print_section('education')
+```
+
+## Professional Experience {data-icon="laptop"}
+
+```{r}
+CV %<>% print_section('research_positions')
+```
+
+## Teaching Experience {data-icon="chalkboard-teacher"}
+
+```{r}
+CV %<>% print_section('teaching_positions')
+```
+
+<br> <br>
+
+## Peer-reviewed articles {data-icon="newspaper"}
+
+```{r}
+CV %<>% print_publications(type = "Article")
+```
+
+## Book chapters and Reports {data-icon="book"}
+
+```{r}
+CV %<>% print_publications(type = "Book chapter|Report")
+```
