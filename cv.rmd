@@ -1,6 +1,10 @@
 ---
-title: "Maria del Mar Quiroga's CV"
-author: Maria del Mar Quiroga
+params:
+  author: "Maria del Mar Quiroga"
+  xlsx: "data/cv.xlsx"
+  bib: "data/cv.bib"
+title: '`r sprintf("%s - Curriculum Vitæ", params[["author"]])`'
+author: '`r params[["author"]]`'
 date: "`r Sys.Date()`"
 output:
   pagedown::html_resume:
@@ -9,6 +13,7 @@ output:
 ---
 
 ```{css, echo=FALSE}
+/* Remove sidebar from second page on */
 .pagedjs_page:not(:first-of-type) {
   --sidebar-width: 0rem;
   --sidebar-background-color: #ffffff;
