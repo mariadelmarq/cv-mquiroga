@@ -43,6 +43,10 @@ jobs:
             any::pagedown
             any::readxl
             any::bib2df
+            any::stringr
+            any::lubridate
+            any::tidyr
+            any::dplyr
       - name: Render curriculum-vitae.Rmd
         run: Rscript -e 'rmarkdown::render("cv.rmd", output_file = "index.html", output_dir = "docs")'
       - name: Upload artifact
