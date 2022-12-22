@@ -20,6 +20,10 @@ output:
   --main-width: calc(var(--content-width) - var(--sidebar-width));
   --decorator-horizontal-margin: 0.2in;
 }
+/* Added to fit all publications in one page, increase substraction to reduce further and delete if no longer needed */
+.pagedjs_page:last-of-type .details {
+  padding-top: calc(var(--row-blocks-padding-top) - 0.2rem)!important;
+} 
 ```
 
 ```{r, include=FALSE}
@@ -106,7 +110,11 @@ CV %<>% print_section('research_positions')
 CV %<>% print_section('teaching_positions')
 ```
 
-<br> <br>
+## Book chapters{data-icon="book"}
+
+```{r}
+CV %<>% print_publications(type = "Book chapter")
+```
 
 ## Peer-reviewed articles {data-icon="newspaper"}
 
@@ -114,8 +122,8 @@ CV %<>% print_section('teaching_positions')
 CV %<>% print_publications(type = "Article")
 ```
 
-## Book chapters and Reports {data-icon="book"}
+## Reports {data-icon="book"}
 
 ```{r}
-CV %<>% print_publications(type = "Book chapter|Report")
+CV %<>% print_publications(type = "Report")
 ```

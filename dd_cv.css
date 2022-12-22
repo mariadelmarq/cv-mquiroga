@@ -51,10 +51,6 @@ sup {
   --decorator-border: 2px solid #993366; /* Make timeline a blue as well*/
 }
 
-.details {
-  padding-top: calc(var(--row-blocks-padding-top) - 0.2rem)!important;
-}
-
 .details .place {
   margin-top: 0.25rem;
 }

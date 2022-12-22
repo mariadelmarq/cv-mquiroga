@@ -190,7 +190,7 @@ print_publications <- function(cv, type="Article", glue_template = "default"){
     glue_template <- "
 ### 
 
-{authors} ({end_year}). <a href={URL}, target='_blank'>{title}</a>. *{publisher}*
+{authors} ({end_year}). <a href={URL} target='_blank'>{title}</a>. *{publisher}*
 
 N/A
 
