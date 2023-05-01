@@ -17,10 +17,13 @@ create_CV_object <-  function(data_location) {
   excel_file <- paste0(data_location,"cv.xlsx")
 
   cv$entries_data <- readxl::read_xlsx(excel_file, "entries", skip = 1)
+  #cv$activities   <- readxl::read_xlsx(excel_file, "activities", skip = 1)
   cv$skills       <- readxl::read_xlsx(excel_file, "skills", skip = 1)
   cv$text_blocks  <- readxl::read_xlsx(excel_file, "text", skip = 1)
   cv$contact_info <- readxl::read_xlsx(excel_file, "contact", skip = 1)
   cv$publications <- bib2df::bib2df(paste0(data_location, "cv.bib"))
+  cv$acknowledgements <- bib2df::bib2df(paste0(data_location, "acknowledgements.bib"))
+  cv$software <- bib2df::bib2df(paste0(data_location, "software.bib"))
 
   extract_year <- function(dates){
     date_year <- stringr::str_extract(dates, "(20|19)[0-9]{2}")
@@ -45,8 +48,7 @@ create_CV_object <-  function(data_location) {
       na.rm = TRUE
     ) %>%
     dplyr::mutate(
-      description_bullets = ifelse(description_bullets != "", paste0("- ", stringr::str_replace_all(description_bullets,c("\\{newline\\}" = "\n-", "\\{newlevel\\}" = "\n\t+"))), ""), 
-    #"\\{newline\\}", "\n-")), ""),
+      description_bullets = ifelse(description_bullets != "", paste0("- ", stringr::str_replace_all(description_bullets,c("\\{newline\\}" = "\n-", "\\{newlevel\\}" = "\n\t+"))), ""),
       start = ifelse(start == "NULL", NA, start),
       end = ifelse(end == "NULL", NA, end),
       start_year = extract_year(start),
@@ -63,36 +65,86 @@ create_CV_object <-  function(data_location) {
       )
     ) %>%
     dplyr::arrange(desc(parse_dates(end))) %>%
+    dplyr::group_by(section,timeline) %>%
+    dplyr::mutate(count = 1:dplyr::n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(timeline = ifelse(count != 1, "N/A", timeline)) %>%
     dplyr::mutate_all(~ ifelse(is.na(.), 'N/A', .))
   
+  cv$acknowledgements %<>%
+    dplyr::mutate(section = "Acknowledgement")
+  
+  cv$software %<>%
+    dplyr::mutate(section = "Software")
+  
   cv$publications %<>%
-    dplyr::filter(is.na(PUBLISHER)) %>%
+    dplyr::bind_rows(cv$acknowledgements) %>%
+    dplyr::bind_rows(cv$software) %>%
     dplyr::mutate(
       month = factor(MONTH, levels = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")),
       authors = sapply(AUTHOR, function(x) paste(x, collapse=", ")),
-      dplyr::across(authors, stringr::str_replace, 'Quiroga, M.', "<b> Quiroga, M. </b>"),
+      dplyr::across(authors, stringr::str_replace, 'Quiroga, M.', "<b>Quiroga, M.</b>"),
+      dplyr::across(authors, stringr::str_replace_all, 'ä', "&#228;"),
+      dplyr::across(authors, stringr::str_replace_all, '’', "&#8217;"),
+      dplyr::across(authors, stringr::str_replace_all, 'é', "&#233;"),
       dplyr::across(TITLE, stringr::str_replace_all, "[{}]", ""),
       section = factor(dplyr::case_when(
+        !is.na(section) ~ section,
         CATEGORY == "ARTICLE" ~ "Article",
         CATEGORY == "TECHREPORT" ~ "Report",
         CATEGORY == "INCOLLECTION" ~ "Book chapter",
-        CATEGORY == "MISC" ~ "Preprint"
-      )),
+        CATEGORY == "MISC" ~ "Preprint",
+        CATEGORY == "INPROCEEDINGS" ~ "Conference presentation",
+        TRUE ~ "Unknown"
+      ), levels = c("Article", "Report", "Book chapter", "Preprint", "Software", "Conference presentation", "Acknowledgement")),
       publisher = dplyr::case_when(
         !is.na(JOURNAL) ~ JOURNAL,
-        !is.na(PUBLISHER) ~ PUBLISHER,
         !is.na(BOOKTITLE) ~ stringr::str_replace_all(BOOKTITLE, '\\{|\\}', ""),
+        !is.na(PUBLISHER) ~ PUBLISHER,
         TRUE ~ NOTE
       ),
-      end_year = extract_year(YEAR)) %>%
+      detail = dplyr::case_when(
+        (CATEGORY == "INPROCEEDINGS" | CATEGORY == "ARTICLE") & !is.na(NOTE) ~ NOTE,
+        section == "Software" ~ ABSTRACT
+      ),
+      pages = dplyr::case_when(
+        !is.na(NUMBER) & !is.na(PAGES) ~ paste0("*",VOLUME,"*(",NUMBER,")",", ",PAGES),
+        !is.na(VOLUME) & !is.na(PAGES) ~ paste0("*",VOLUME,"*, ",PAGES),
+        !is.na(PAGES) ~ PAGES,
+        !is.na(VOLUME) ~ paste0("*",VOLUME,"*"),
+        TRUE ~ ""
+      ),
+      doi = dplyr::case_when(
+        !is.na(DOI) ~ DOI,
+        !is.na(URL) ~ stringr::str_remove(URL, "https://doi.org/"),
+        TRUE ~ ""
+      ),
+      end_year = extract_year(YEAR),
+      url_title = dplyr::case_when(
+        section == "Software" & !is.na(NOTE) ~ paste0('<a href=', NOTE, ' target="_blank">', TITLE, '</a>'),
+        !is.na(URL) ~ paste0('<a href=', URL, ' target="_blank">', TITLE, '</a>'),
+        TRUE ~ TITLE)
+      ) %>%
     dplyr::rename(title = TITLE) %>%
     dplyr::arrange(desc(end_year), desc(month)) %>%
-    dplyr::select(section, authors, end_year, URL, title, publisher)
+    dplyr::group_by(section,end_year) %>%
+    dplyr::mutate(count = 1:dplyr::n()) %>%
+    dplyr::group_by(section) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(section) %>%
+    dplyr::mutate(number = 1:dplyr::n()) %>%
+    dplyr::mutate(
+      timeline = dplyr::case_when(count != 1 ~ "N/A", TRUE ~ as.character(end_year)),
+      number = dplyr::case_when(
+        section=="Article" ~ paste0("\\* ", number, ". "), 
+        TRUE ~ paste0(number, ". ")
+        )) %>%
+    dplyr::select(section, authors, end_year, URL, pages, title, publisher, doi, detail, timeline, url_title, ADDRESS, number) 
   
   cv$network <- cv$publications %>%
     dplyr::mutate(start_year = end_year) %>%
     dplyr::bind_rows(cv$entries_data) %>%
-    dplyr::select(section, title, start_year, end_year, timeline, title, in_resume)
+    dplyr::select(section, title, start_year, end_year, timeline, in_resume)
   
   cv
 }
@@ -101,7 +153,6 @@ create_CV_object <-  function(data_location) {
 #' @description Take a position data frame and the section id desired and prints the section to markdown.
 #' @param section_id ID of the entries section to be printed as encoded by the `section` column of the `entries` table
 print_section <- function(cv, section_id, glue_template = "default"){
-
   if(glue_template == "default"){
     glue_template <- "
 ### {title}
@@ -114,7 +165,18 @@ print_section <- function(cv, section_id, glue_template = "default"){
 
 {description_bullets}
 \n\n\n"
+  } else if(glue_template == "academic_cv"){
+    glue_template <- "
+### {title}
+
+{loc}
+
+{institution}
+
+{timeline}
+\n\n\n"
   }
+
 
   section_data <- dplyr::filter(cv$entries_data, section == section_id)
 
@@ -184,29 +246,58 @@ print_contact_info <- function(cv){
 
 #' @description Print publications
 #' @param type of publication in the `CATEGORY` column of the `publications` table
-print_publications <- function(cv, type="Article", glue_template = "default"){
+print_publications <- function(cv, type="Article"){
+  article_section <- "{authors} ({end_year}). {title}. *{publisher}* {pages} <a href={URL} target='_blank'>{doi}</a>"
   
-  if(glue_template == "default"){
-    glue_template <- "
-### 
+  if(type == "Report"){
+    glue_section <- "{authors} ({end_year}). {url_title}. *{publisher}*"
+  } else if(type == "Conference presentation"){
+    glue_section <- "{authors} {url_title}. *{detail}*. {ADDRESS}"
+  } else if(type == "Software"){
+    glue_section <- "{url_title} ({end_year}). {detail}. {URL}"
+  } else if(type == "Article"){
+    glue_section <- paste0(article_section, " ({detail})")
+  } else {
+    glue_section <- article_section
+  }
+  
+  type = stringr::str_split(type, "\\|")[[1]]
+  publication_data <- dplyr::filter(cv$publications, section %in% type)
+  
+  glue_template <- paste0("
+###
 
-{authors} ({end_year}). <a href={URL} target='_blank'>{title}</a>. *{publisher}*
+__{number}__ ", glue_section,"
 
 N/A
 
 {timeline}
 
-\n\n\n"
-  }
-  type = stringr::str_split(type, "\\|")[[1]]
-  publication_data <- dplyr::filter(cv$publications, section %in% type) %>%
-    dplyr::group_by(end_year) %>%
-    dplyr::mutate(count = 1:dplyr::n()) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(timeline = dplyr::case_when(count != 1 ~ "N/A", TRUE ~ as.character(end_year)))
+\n\n\n")
   
   print(glue::glue_data(publication_data, glue_template))
   
   invisible(cv)
 
+}
+
+#' @description Take a position data frame and the section id desired and prints the section to markdown.
+#' @param section_id ID of the entries section to be printed as encoded by the `section` column of the `activities` table
+print_activity <- function(cv, section_id){
+  glue_template <- "
+###
+
+<b>{event}</b>. {activity}.
+
+{loc}
+
+{timeline}
+
+\n\n\n"
+
+  section_data <- dplyr::filter(cv$activities, section == section_id)
+  
+  print(glue::glue_data(section_data, glue_template))
+  
+  invisible(cv)
 }

@@ -6,11 +6,11 @@
 # for the HTML and PDF rendering. This exercise is left to the reader.
 
 # Knit the HTML version
-rmarkdown::render("cv.rmd", output_file = "cv.html")
+rmarkdown::render("academic_cv.rmd", output_file = "academic_cv.html")
 
 # Knit the PDF version to temporary html location
 tmp_html_cv_loc <- fs::file_temp(ext = ".html")
-rmarkdown::render("cv.rmd", output_file = tmp_html_cv_loc)
+rmarkdown::render("academic_cv.rmd", output_file = tmp_html_cv_loc)
 
 # Convert to PDF using Pagedown
 pagedown::chrome_print(input = tmp_html_cv_loc, output = paste0(format(Sys.Date(), "%Y%m%d"),"-Quiroga.pdf"))

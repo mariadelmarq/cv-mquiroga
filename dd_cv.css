@@ -59,9 +59,18 @@ sup {
   padding-top: 0.005rem;
 }
 
-/* Laptop icon isn't centered by default which is lame */
-.fa-laptop {
+/* Some icons aren't centered by default which is lame */
+.fa-laptop, .fa-sitemap, .fa-newspaper{
   margin-left: -3px;
+}
+.fa-chalkboard-teacher {
+  margin-left: -4px;
+}
+/*.fa-book{
+  margin-left: 1px;
+}*/
+.fa-award, .fa-bookmark{
+  margin-left: 1px;
 }
 
 /* When we have links at bottom in a list make sure they actually are numbered */
@@ -132,11 +141,11 @@ sup {
   box-shadow: 1px 1px 4px black;
 }
 
-/*Add page number to the bottom left of the left and right pages */
+/*Add page number to the center of the pages */
 /* See https://stackoverflow.com/questions/20050939/print-page-numbers-on-pages-when-printing-html */
 @page {
   @bottom-center {
     content: 'Page ' counter(page) ' of ' counter(pages);
   }
-  font-size: 0.55rem;
+  font-size: 0.6rem;
 }

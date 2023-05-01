@@ -1,0 +1,197 @@
+---
+params:
+  author: "Maria del Mar Quiroga"
+  xlsx: "data/cv.xlsx"
+  bib: "data/cv.bib"
+title: '`r sprintf("%s - Curriculum Vitæ", params[["author"]])`'
+author: '`r params[["author"]]`'
+date: "`r Sys.Date()`"
+output:
+  pagedown::html_resume:
+    css: ['dd_cv.css', 'resume']
+    self_contained: true
+---
+
+```{css, echo=FALSE}
+/* Remove sidebar from second page on 
+.pagedjs_page:not(:first-of-type) {*/
+.pagedjs_page {
+  --sidebar-width: 0rem;
+  --sidebar-background-color: #ffffff;
+  --main-width: calc(var(--content-width) - var(--sidebar-width));
+  --decorator-horizontal-margin: 0.2in;
+}
+/* Added to fit all publications in one page, increase substraction to reduce further and delete if no longer needed 
+.pagedjs_page:last-of-type .details {
+  padding-top: calc(var(--row-blocks-padding-top) - 0.2rem)!important;
+} */
+/* Remove some extra padding from title to fit first page */
+[data-id="title"], [data-id="education"], [data-id="reports"], [data-id="research-and-professional-experience"], [data-id="supervision-and-mentoring"], [data-id="leadership-and-service"], [data-id="awards-and-scholarships"]  {
+  margin: 0;
+}
+.pagedjs_page {
+  --pagedjs-margin-top: 0.8in;
+  --pagedjs-margin-bottom: 0.8in;
+}
+```
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  results='asis', 
+  echo = FALSE
+)
+
+library(magrittr) # For the pipe
+source("R/cv_printing_functions.r")
+
+# Read in all data and initialize a CV printer object
+CV <- create_CV_object(data_location = "data/")
+
+#CV$entries_data$description_bullets
+```
+
+```{r}
+# When in pdf export mode the little dots on the timeline are unaligned, so fix that with some conditional CSS.
+cat("
+<style>
+:root{
+  --decorator-outer-offset-left: -6.5px;
+}
+</style>")
+```
+<!--
+# Aside
+
+```{r}
+# Build interactive network of positions colored by section
+# and connected if they occurred in the same year
+#datadrivencv::build_network_logo(CV$network)
+```
+
+## Contact {#contact}
+
+```{r}
+CV %>% print_contact_info()
+```
+
+## Key skills {#skills}
+
+```{r}
+CV %>% print_skill_list(skill_type = "key_skill")
+```
+
+
+## Technical skills
+```{r}
+CV %>% print_skill_bars(skill_type = "technical", bar_color="#660033")
+```
+
+## Disclaimer {#disclaimer}
+
+Made with the R package [**pagedown**](https://github.com/rstudio/pagedown)
+
+Last updated on `r Sys.Date()`
+-->
+# Main
+
+## Maria del Mar Quiroga {#title}
+<!--
+```{r}
+# Note the special double pipe so we modify the CV object in place
+CV %<>% print_text_block("intro") 
+```
+-->
+## Education {data-icon="graduation-cap"}
+
+```{r}
+CV %<>% print_section('education')
+```
+
+## Research and Professional Experience {data-icon="laptop"}
+
+```{r}
+CV %<>% print_section('research_positions', glue_template = "academic_cv")
+```
+
+## Supervision and Mentoring {data-icon="sitemap"}
+
+```{r}
+CV %<>% print_section('supervision_mentoring')
+```
+
+## Leadership and Service {data-icon="certificate"}
+
+```{r}
+CV %<>% print_section('service')
+```
+
+## Awards and Scholarships {data-icon="award"}
+
+```{r}
+CV %<>% print_section('awards_scholarships')
+```
+
+## Teaching Experience {data-icon="chalkboard-teacher"}
+
+```{r}
+CV %<>% print_section('teaching_positions')
+```
+
+## Science Communication and Outreach {data-icon="globe"}
+
+```{r}
+CV %<>% print_section('outreach')
+```
+
+## Professional Development {data-icon="chart-line"}
+
+```{r}
+CV %<>% print_section('prof_development')
+```
+
+## Journal Articles {data-icon="newspaper"}
+
+```{r}
+CV %<>% print_publications(type = "Article")
+```
+
+```{r}
+CV %<>% print_text_block("articles") 
+```
+
+## Reports {data-icon="book"}
+
+```{r}
+CV %<>% print_publications(type = "Report")
+```
+
+## Book Chapters{data-icon="book"}
+
+```{r}
+CV %<>% print_publications(type = "Book chapter")
+```
+
+## Preprints {data-icon="newspaper"}
+
+```{r}
+CV %<>% print_publications(type = "Preprint")
+```
+
+## Software and training material {data-icon="code"}
+
+```{r}
+CV %<>% print_publications(type = "Software")
+```
+
+
+## Conference Presentations and Posters {data-icon="image"}
+
+```{r}
+CV %<>% print_publications(type = "Conference presentation")
+```
+
+## Acknowledged Contributions {data-icon="newspaper"}
+
+```{r}
+CV %<>% print_publications(type = "Acknowledgement")
+```
